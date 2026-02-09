@@ -14,7 +14,7 @@ venv/
 # =========================
 # Google credentials
 # =========================
-credentials.json
+./credentials.json
 
 # =========================
 # Logs / output
