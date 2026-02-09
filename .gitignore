@@ -1,3 +1,50 @@
-./venv
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
 
-./credentials.json
+# Virtual environments
+venv/
+.env/
+.env.*
+
+# =========================
+# Google credentials
+# =========================
+credentials.json
+
+# =========================
+# Logs / output
+# =========================
+*.log
+*.out
+
+# =========================
+# OS junk
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Editors / IDEs
+# =========================
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# =========================
+# Node (if in same repo)
+# =========================
+node_modules/
+.next/
+dist/
+build/
+
+# =========================
+# Misc
+# =========================
+.cache/
