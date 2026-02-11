@@ -1,0 +1,50 @@
+name: Scan Google Doc and update Supabase
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 */6 * * *" # every 6 hours (UTC)
+
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: scanner
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      # Writes the service account JSON secret to a temporary file used by the scanner
+      - name: Write Google credentials file
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+        run: |
+          python - <<'EOF'
+          import os
+          with open("credentials.json", "w", encoding="utf-8") as f:
+              f.write(os.environ["GOOGLE_SERVICE_ACCOUNT_JSON"])
+          print("Wrote credentials.json")
+          EOF
+
+      - name: Run scanner
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          DOCUMENT_ID: ${{ secrets.DOCUMENT_ID }}
+          TARGET_HANDLE: ${{ secrets.TARGET_HANDLE }}
+          GOOGLE_CREDENTIALS_FILE: credentials.json
+        run: |
+          python scan_doc.py

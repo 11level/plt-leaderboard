@@ -1,52 +1,23 @@
-# =========================
 # Python
-# =========================
 __pycache__/
 *.py[cod]
-*.pyo
-*.pyd
-
-# Virtual environments
 venv/
-.env/
+.env
 .env.*
+*.log
 
-# =========================
-# Google credentials
-# =========================
-./credentials.json
+# Secrets
 credentials.json
 scanner/credentials.json
+scanner/.env
 
-# =========================
-# Logs / output
-# =========================
-*.log
-*.out
-
-# =========================
-# OS junk
-# =========================
-.DS_Store
-Thumbs.db
-
-# =========================
-# Editors / IDEs
-# =========================
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# =========================
-# Node (if in same repo)
-# =========================
+# Node
 node_modules/
 .next/
 dist/
-build/
 
-# =========================
-# Misc
-# =========================
-.cache/
+# OS/Editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

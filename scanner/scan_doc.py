@@ -4,10 +4,17 @@ from google.oauth2 import service_account
 from googleapiclient.discovery import build
 import re
 
+import os
+from dotenv import load_dotenv
+from pathlib import Path
+
+ENV_PATH = Path(__file__).resolve().parent / ".env"
+load_dotenv(ENV_PATH)
+
 # -------- CONFIG --------
-SERVICE_ACCOUNT_FILE = "credentials.json"
-DOCUMENT_ID = "1Omm8uzui6_sVw45mXbLgkEotFutBuPkwkdIGnpVTyu8"
-TARGET_NAME = "ilovebeabadoobee"  # person you want to search for
+SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
+DOCUMENT_ID = os.getenv("DOCUMENT_ID")
+TARGET_NAMES = os.getenv("TARGET_NAMES")
 # ------------------------
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
