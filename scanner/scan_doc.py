@@ -15,6 +15,7 @@ load_dotenv(ENV_PATH)
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
 DOCUMENT_ID = os.getenv("DOCUMENT_ID")
 TARGET_NAMES = os.getenv("TARGET_NAMES")
+DEBUG_TABS = os.getenv("DEBUG_TABS", "0").lower() in ("1", "true", "yes")
 # ------------------------
 
 SCOPES = ["https://www.googleapis.com/auth/documents.readonly"]
