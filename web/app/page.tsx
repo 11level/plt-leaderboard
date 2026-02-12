@@ -1,17 +1,8 @@
-export type LeaderboardEntry = {
-  rank: number;
-  name: string;
-  cardsCut: number;
-};
-
-// Placeholder data – replace with data from your Google Drive scanner
-const MOCK_LEADERBOARD: LeaderboardEntry[] = [
-  { rank: 1, name: "ilovebeabadoobee", cardsCut: 1495 },
-  { rank: 2, name: "ezpeasy", cardsCut: 38 },
-  { rank: 3, name: "riyal or fake", cardsCut: 31 },
-  { rank: 4, name: "weij", cardsCut: 24 },
-  { rank: 5, name: "adi", cardsCut: 19 },
-];
+import Link from "next/link";
+import {
+  MOCK_LEADERBOARD,
+  type LeaderboardEntry,
+} from "@/lib/mockData";
 
 function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
   return (
@@ -44,7 +35,12 @@ function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
                 #{entry.rank}
               </td>
               <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                {entry.name}
+                <Link
+                  href={`/profile/${entry.slug}`}
+                  className="text-zinc-900 underline decoration-zinc-300 underline-offset-2 transition hover:decoration-zinc-900 dark:text-zinc-100 dark:decoration-zinc-600 dark:hover:decoration-zinc-100"
+                >
+                  {entry.name}
+                </Link>
               </td>
               <td className="px-6 py-4 text-right font-mono text-zinc-700 dark:text-zinc-300">
                 {entry.cardsCut.toLocaleString()}
