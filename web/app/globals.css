@@ -3,6 +3,13 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  /* Podium only */
+  --rank-1: #b45309;
+  --rank-2: #52525b;
+  --rank-3: #a16207;
+  --podium-1-bg: #fefce8;
+  --podium-2-bg: #f4f4f5;
+  --podium-3-bg: #fef9e7;
 }
 
 @theme inline {
@@ -15,12 +22,18 @@
 @media (prefers-color-scheme: dark) {
   :root {
     --background: #0a0a0a;
-    --foreground: #ededed;
+    --foreground: #fafafa;
+    --rank-1: #facc15;
+    --rank-2: #a1a1aa;
+    --rank-3: #eab308;
+    --podium-1-bg: #422006;
+    --podium-2-bg: #27272a;
+    --podium-3-bg: #422006;
   }
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
