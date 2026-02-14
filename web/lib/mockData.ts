@@ -1,5 +1,10 @@
 import { slugify } from "./slugs";
 
+export type Season = {
+  slug: string;
+  name: string;
+};
+
 export type LeaderboardEntry = {
   rank: number;
   name: string;
@@ -34,6 +39,22 @@ const RAW_LEADERBOARD: Omit<LeaderboardEntry, "slug">[] = [
 export const MOCK_LEADERBOARD: LeaderboardEntry[] = RAW_LEADERBOARD.map(
   (e) => ({ ...e, slug: slugify(e.name) })
 );
+
+// Seasons – replace with real data (e.g. from scanner or API)
+export const MOCK_SEASONS: Season[] = [
+  { slug: "2025-spring", name: "2025 Spring" },
+  { slug: "2024-fall", name: "2024 Fall" },
+  { slug: "2024-spring", name: "2024 Spring" },
+];
+
+export function getSeasonBySlug(slug: string): Season | null {
+  return MOCK_SEASONS.find((s) => s.slug === slug) ?? null;
+}
+
+export function getLeaderboardBySeason(seasonSlug: string): LeaderboardEntry[] {
+  // For now all seasons share the same mock leaderboard; later key by seasonSlug.
+  return MOCK_LEADERBOARD;
+}
 
 // Mock recently cut cards per profile (keyed by slug)
 const MOCK_RECENT_CARDS: Record<string, RecentCard[]> = {
