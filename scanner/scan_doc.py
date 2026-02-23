@@ -15,9 +15,36 @@ load_dotenv(ENV_PATH)
 SERVICE_ACCOUNT_FILE = os.getenv("GOOGLE_CREDENTIALS_FILE")
 DOCUMENT_ID = os.getenv("DOCUMENT_ID")
 ROOT_FOLDER_ID = os.getenv("ROOT_FOLDER_ID")  # Google Drive folder to scan (optional)
-TARGET_NAMES = os.getenv("TARGET_NAMES", "")  # comma-separated list of names/keywords
+# Person -> tags: "Emily:ezpz,ezpeasy|ilovebeabadoobee:ilovebeabadoobee" (each tag counts toward that person)
+PEOPLE_TAGS = os.getenv("PEOPLE_TAGS", "")
+TARGET_NAMES = os.getenv("TARGET_NAMES", "")  # fallback: comma-separated names (each name = 1 tag)
 DEBUG_TABS = os.getenv("DEBUG_TABS", "0").lower() in ("1", "true", "yes")
 # ------------------------
+
+
+def parse_people_tags() -> dict[str, list[str]]:
+    """
+    Parse PEOPLE_TAGS into {person: [tag1, tag2, ...]}.
+    Format: Emily:ezpz,ezpeasy|ilovebeabadoobee:ilovebeabadoobee
+    Fallback: if PEOPLE_TAGS empty, use TARGET_NAMES (each name = person with that single tag).
+    """
+    if PEOPLE_TAGS.strip():
+        out: dict[str, list[str]] = {}
+        for pair in PEOPLE_TAGS.split("|"):
+            pair = pair.strip()
+            if not pair:
+                continue
+            if ":" not in pair:
+                continue
+            person, tags_str = pair.split(":", 1)
+            person = person.strip()
+            tags = [t.strip() for t in tags_str.split(",") if t.strip()]
+            if person and tags:
+                out[person] = tags
+        return out
+    # Fallback: TARGET_NAMES -> each name is both person and single tag
+    names = [n.strip() for n in TARGET_NAMES.split(",") if n.strip()]
+    return {n: [n] for n in names}
 
 SCOPES = [
     "https://www.googleapis.com/auth/documents.readonly",
@@ -94,19 +121,24 @@ def get_doc_text_all_tabs(
     return "".join(chunks)
 
 
-def count_cards(text: str, name: str) -> int:
+def count_tag(text: str, tag: str) -> int:
     """
-    Count occurrences of a pattern like:
-      //ilovebeabadoobee
-      //  ilovebeabadoobee
-      //    ilovebeabadoobee
-    Matches anywhere in a line (not just at start).
+    Count occurrences of either:
+      // tag   or   / tag
+    (with optional space around slashes). Does not double-count: // tag
+    matches once (not as both // and /). Each match = 1 card.
     """
+    # Match // tag OR / tag; (?<!/)/ ensures we don't match the second / in //
     pattern = re.compile(
-        rf"[ \t]*//[ \t]*{re.escape(name)}\b",
-        re.IGNORECASE | re.MULTILINE
+        rf"[ \t]*(?://[ \t]*{re.escape(tag)}\b|(?<!/)/[ \t]*{re.escape(tag)}\b)",
+        re.IGNORECASE | re.MULTILINE,
     )
     return len(pattern.findall(text))
+
+
+def count_cards_for_person(text: str, tags: list[str]) -> int:
+    """Sum counts of all tags for one person. Each tag match counts toward that person."""
+    return sum(count_tag(text, t) for t in tags)
 
 
 def _iter_docs_in_folder(
@@ -159,18 +191,22 @@ def _iter_docs_in_folder(
 
 
 def scan_folder_for_keywords(
-    root_folder_id: str, names: list[str], debug: bool = False
+    root_folder_id: str,
+    people_tags: dict[str, list[str]],
+    debug: bool = False,
 ) -> tuple[dict[str, int], list[tuple[str, str, dict[str, int]]]]:
     """
-    Scan every Google Doc in a Drive folder (and subfolders), including
-    every tab in each doc, for the given names/keywords.
+    Scan every tab of every Google Doc in a Drive folder (and subfolders)
+    for tags. Each person has a list of tags; any tag match counts toward that person.
+
+    people_tags: {person: [tag1, tag2, ...]}  e.g. {"Emily": ["ezpz", "ezpeasy"]}
 
     Returns:
-      - totals: {name: total_matches_across_all_docs}
-      - per_doc: list of (doc_id, doc_name, {name: matches_in_that_doc})
+      - totals: {person: total_matches_across_all_docs}
+      - per_doc: list of (doc_id, doc_name, {person: matches_in_that_doc})
     """
-    if not names:
-        raise ValueError("No TARGET_NAMES provided.")
+    if not people_tags:
+        raise ValueError("No PEOPLE_TAGS (or TARGET_NAMES) provided.")
 
     creds = service_account.Credentials.from_service_account_file(
         SERVICE_ACCOUNT_FILE, scopes=SCOPES
@@ -180,7 +216,7 @@ def scan_folder_for_keywords(
 
     doc_list = _iter_docs_in_folder(root_folder_id, drive_service, debug=debug)
 
-    totals: dict[str, int] = {n: 0 for n in names}
+    totals: dict[str, int] = {p: 0 for p in people_tags}
     per_doc: list[tuple[str, str, dict[str, int]]] = []
 
     for doc_id, doc_name in doc_list:
@@ -190,10 +226,10 @@ def scan_folder_for_keywords(
         text = get_doc_text_all_tabs(doc_id, docs_service=docs_service, debug=debug)
         doc_counts: dict[str, int] = {}
 
-        for n in names:
-            c = count_cards(text, n)
-            doc_counts[n] = c
-            totals[n] += c
+        for person, tags in people_tags.items():
+            c = count_cards_for_person(text, tags)
+            doc_counts[person] = c
+            totals[person] += c
 
         per_doc.append((doc_id, doc_name, doc_counts))
 
@@ -204,33 +240,37 @@ if __name__ == "__main__":
     if not SERVICE_ACCOUNT_FILE:
         raise RuntimeError("GOOGLE_CREDENTIALS_FILE is not set in .env")
 
-    # Parse comma-separated TARGET_NAMES into a clean list.
-    names = [n.strip() for n in TARGET_NAMES.split(",") if n.strip()]
-
-    if ROOT_FOLDER_ID:
-        print(f"Scanning Drive folder {ROOT_FOLDER_ID} for: {', '.join(names)}")
-        totals, per_doc = scan_folder_for_keywords(
-            ROOT_FOLDER_ID, names, debug=DEBUG_TABS
+    people_tags = parse_people_tags()
+    if not people_tags:
+        raise RuntimeError(
+            "Set PEOPLE_TAGS (e.g. Emily:ezpz,ezpeasy|adi:adi) or TARGET_NAMES in .env"
         )
 
-        print("\n=== Totals across all docs ===")
-        for n in names:
-            print(f"{n}: {totals.get(n, 0)}")
+    if ROOT_FOLDER_ID:
+        print(f"Scanning Drive folder {ROOT_FOLDER_ID}")
+        for person, tags in people_tags.items():
+            print(f"  {person} <- {tags}")
+        totals, per_doc = scan_folder_for_keywords(
+            ROOT_FOLDER_ID, people_tags, debug=DEBUG_TABS
+        )
+
+        print("\n=== Totals (every tab, every document, every folder) ===")
+        for person in people_tags:
+            print(f"{person}: {totals.get(person, 0)}")
 
         print("\n=== Per-document breakdown ===")
         for doc_id, doc_name, counts in per_doc:
             line_parts = [f"{doc_name} ({doc_id})"]
-            for n in names:
-                line_parts.append(f"{n}={counts.get(n, 0)}")
+            for person in people_tags:
+                line_parts.append(f"{person}={counts.get(person, 0)}")
             print(" | ".join(line_parts))
 
     elif DOCUMENT_ID:
-        # Fallback: just scan a single document (all tabs).
-        print(f"Scanning single document {DOCUMENT_ID} for: {', '.join(names)}")
+        print(f"Scanning single document {DOCUMENT_ID}")
         doc_text = get_doc_text_all_tabs(DOCUMENT_ID, debug=DEBUG_TABS)
-        for n in names:
-            count = count_cards(doc_text, n)
-            print(f"Cards cut by {n}: {count}")
+        for person, tags in people_tags.items():
+            count = count_cards_for_person(doc_text, tags)
+            print(f"{person}: {count} (tags: {tags})")
     else:
         raise RuntimeError(
             "You must set either DOCUMENT_ID or ROOT_FOLDER_ID in the .env file."
