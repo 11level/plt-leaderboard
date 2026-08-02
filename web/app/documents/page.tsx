@@ -1,0 +1,7 @@
+import { ExternalLink, RefreshCw, Search } from "lucide-react";
+import { documents } from "@/lib/opsData";
+
+export default function DocumentsPage(){
+  return <main className="shell"><section className="page-head"><div><h1>Documents</h1><p>Google Drive files included in recursive preparation scans</p></div><button className="button"><RefreshCw/> Rescan folder</button></section>
+  <section className="panel"><div className="panel-head"><div><h2>Connected documents</h2><p>Scanning Google Docs in the PLT Nationals folder</p></div><div className="panel-tools"><label className="input-wrap"><Search/><input aria-label="Search documents" placeholder="Search documents..."/></label><select className="select"><option>All file types</option><option>Google Docs</option></select></div></div><div className="table-scroll"><table><thead><tr><th>DOCUMENT</th><th>TYPE</th><th>CARDS</th><th>VERIFIED</th><th>DUPLICATES</th><th>LAST MODIFIED</th><th>LAST SCANNED</th><th>STATUS</th><th></th></tr></thead><tbody>{documents.map(doc=><tr key={doc.name}><td><strong>{doc.name}</strong></td><td>{doc.type}</td><td>{doc.cards}</td><td>{doc.verified}</td><td>{doc.duplicates}</td><td>{doc.modified}</td><td>{doc.scanned}</td><td><span className={`badge ${doc.status==="Synced"?"verified":doc.status==="Processing"?"syncing":"review"}`}><i/>{doc.status}</span></td><td><button className="table-action" aria-label={`Open ${doc.name} in Drive`}><ExternalLink/></button></td></tr>)}</tbody></table></div></section></main>
+}

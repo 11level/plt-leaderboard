@@ -123,14 +123,10 @@ def get_doc_text_all_tabs(
 
 def count_tag(text: str, tag: str) -> int:
     """
-    Count occurrences of either:
-      // tag   or   / tag
-    (with optional space around slashes). Does not double-count: // tag
-    matches once (not as both // and /). Each match = 1 card.
+    Count strict cutter tags in the form ``// username`` on their own line.
     """
-    # Match // tag OR / tag; (?<!/)/ ensures we don't match the second / in //
     pattern = re.compile(
-        rf"[ \t]*(?://[ \t]*{re.escape(tag)}\b|(?<!/)/[ \t]*{re.escape(tag)}\b)",
+        rf"^[ \t]*//[ \t]*{re.escape(tag)}[ \t]*$",
         re.IGNORECASE | re.MULTILINE,
     )
     return len(pattern.findall(text))

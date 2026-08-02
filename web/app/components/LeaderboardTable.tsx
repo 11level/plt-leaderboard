@@ -1,57 +1,12 @@
 import Link from "next/link";
+import { Search } from "lucide-react";
 import type { LeaderboardEntry } from "@/lib/mockData";
 
-function getRowStyles(rank: number, index: number): string {
-  const border = "border-b border-zinc-100 dark:border-zinc-800";
-  if (rank === 1)
-    return `${border} border-l-4 border-l-[var(--rank-1)] bg-[var(--podium-1-bg)]`;
-  if (rank === 2)
-    return `${border} border-l-4 border-l-[var(--rank-2)] bg-[var(--podium-2-bg)]`;
-  if (rank === 3)
-    return `${border} border-l-4 border-l-[var(--rank-3)] bg-[var(--podium-3-bg)]`;
-  return index % 2 === 0
-    ? `${border} bg-white dark:bg-transparent`
-    : `${border} bg-zinc-50/50 dark:bg-zinc-900/30`;
-}
-
-export function LeaderboardTable({ entries }: { entries: LeaderboardEntry[] }) {
-  return (
-    <div className="w-full overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50">
-      <table className="w-full border-collapse text-left">
-        <thead>
-          <tr className="border-b border-zinc-200 bg-zinc-50 dark:border-zinc-700 dark:bg-zinc-800/80">
-            <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-              Rank
-            </th>
-            <th className="px-6 py-4 text-sm font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-              Name
-            </th>
-            <th className="px-6 py-4 text-right text-sm font-semibold uppercase tracking-wider text-zinc-600 dark:text-zinc-400">
-              Cards cut
-            </th>
-          </tr>
-        </thead>
-        <tbody>
-          {entries.map((entry, i) => (
-            <tr key={entry.rank} className={getRowStyles(entry.rank, i)}>
-              <td className="px-6 py-4 font-mono text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                #{entry.rank}
-              </td>
-              <td className="px-6 py-4 font-medium text-zinc-900 dark:text-zinc-100">
-                <Link
-                  href={`/profile/${entry.slug}`}
-                  className="rounded py-0.5 font-medium text-zinc-900 underline decoration-zinc-300 underline-offset-2 transition hover:decoration-zinc-900 dark:text-zinc-100 dark:decoration-zinc-500 dark:hover:decoration-zinc-200"
-                >
-                  {entry.name}
-                </Link>
-              </td>
-              <td className="px-6 py-4 text-right font-mono text-sm text-zinc-700 dark:text-zinc-300">
-                {entry.cardsCut.toLocaleString()}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
+export function LeaderboardTable({entries}:{entries:LeaderboardEntry[]}) {
+  return <section className="panel">
+    <div className="panel-head"><div><h2>Team leaderboard</h2><p>Ranked by verified unique cards</p></div><div className="panel-tools"><label className="input-wrap"><Search/><input aria-label="Search debaters" placeholder="Search debaters..."/></label><select className="select" aria-label="Filter status"><option>All statuses</option><option>Verified</option><option>Review needed</option></select><select className="select" aria-label="Sort leaderboard"><option>Verified cards</option><option>This week</option><option>Last activity</option></select></div></div>
+    <div className="table-scroll"><table><thead><tr><th>RANK</th><th>DEBATER</th><th>VERIFIED CARDS</th><th>THIS WEEK</th><th>RAW CARDS</th><th>DUPLICATES</th><th>LAST ACTIVITY</th><th>STATUS</th></tr></thead>
+    <tbody>{entries.map(entry=><tr key={entry.slug}><td><span className={`rank rank-${entry.rank}`}>{entry.rank}</span></td><td><Link className="member" href={`/profile/${entry.slug}`}><span className="avatar" style={{background:entry.accent,color:"#fff"}}>{entry.initials}</span><div><strong>{entry.name}</strong><small>{`// [${entry.slug.split("-")[0]}]`}</small></div></Link></td><td className="verified">{entry.verified}</td><td><span className="positive">+{entry.periodAdded}</span></td><td>{entry.raw}</td><td>{entry.duplicates}</td><td className="muted">{entry.lastAdded}</td><td><span className={`badge ${entry.reviewStatus==="Clear"?"verified":entry.reviewStatus==="Monitor"?"syncing":"review"}`}><i/>{entry.reviewStatus==="Clear"?"Verified":entry.reviewStatus==="Monitor"?"Syncing":"Review needed"}</span></td></tr>)}</tbody></table></div>
+    <div className="pagination"><span>Showing 1–{entries.length} of {entries.length} debaters</span><div><button aria-label="Previous page">‹</button><button className="active">1</button><button aria-label="Next page">›</button></div></div>
+  </section>;
 }

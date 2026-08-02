@@ -2,50 +2,37 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import {
+  Activity, Bell, BookOpen, ChevronDown, FolderOpen,
+  LayoutDashboard, Menu, Search, Settings, ShieldCheck, Users, X,
+} from "lucide-react";
+import { useState } from "react";
 
-const navTabs = [{ href: "/", label: "Seasons" }];
-
-function isActive(pathname: string, href: string): boolean {
-  if (href === "/") return pathname === "/" || pathname.startsWith("/season");
-  return pathname.startsWith(href);
-}
+const links = [
+  { href: "/", label: "Leaderboard", icon: LayoutDashboard },
+  { href: "/activity", label: "Activity", icon: Activity },
+  { href: "/cards", label: "Cards", icon: BookOpen },
+  { href: "/documents", label: "Documents", icon: FolderOpen },
+  { href: "/admin", label: "Review Queue", icon: ShieldCheck, count: 7 },
+  { href: "/team", label: "Team", icon: Users },
+  { href: "/settings", label: "Settings", icon: Settings },
+];
 
 export function SiteNav() {
   const pathname = usePathname();
-
-  return (
-    <header className="sticky top-0 z-10 border-b border-zinc-200 bg-white/95 font-sans backdrop-blur dark:border-zinc-800 dark:bg-zinc-950/95">
-      <nav
-        className="mx-auto flex max-w-3xl items-center justify-between px-4 py-3 sm:px-6 lg:px-8"
-        aria-label="Main"
-      >
-        <Link
-          href="/"
-          className="rounded-lg px-3 py-2 text-sm font-semibold text-zinc-900 transition hover:bg-zinc-100 hover:text-zinc-700 dark:text-zinc-100 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-        >
-          Home
-        </Link>
-        <ul className="flex items-center gap-1">
-          {navTabs.map((tab) => {
-            const active = isActive(pathname, tab.href);
-            return (
-              <li key={tab.href}>
-                <Link
-                  href={tab.href}
-                  className={
-                    active
-                      ? "rounded-lg bg-zinc-100 px-3 py-2 text-sm font-medium text-zinc-900 dark:bg-zinc-800 dark:text-zinc-100"
-                      : "rounded-lg px-3 py-2 text-sm font-medium text-zinc-600 transition hover:bg-zinc-100 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                  }
-                  aria-current={active ? "page" : undefined}
-                >
-                  {tab.label}
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      </nav>
+  const [open, setOpen] = useState(false);
+  return <>
+    <aside className={`sidebar ${open ? "open" : ""}`}>
+      <div className="side-brand"><span>PL</span><div><strong>Prep Leaderboard</strong><small>Academic analytics</small></div><button onClick={()=>setOpen(false)} aria-label="Close navigation"><X/></button></div>
+      <nav aria-label="Primary">{links.map(({href,label,icon:Icon,count})=><Link onClick={()=>setOpen(false)} className={pathname===href || (href!=="/" && pathname.startsWith(href)) ? "active":""} href={href} key={href}><Icon/><span>{label}</span>{count ? <b>{count}</b>:null}</Link>)}</nav>
+      <div className="side-user"><span className="avatar">PQ</span><div><strong>Pingkang Qian</strong><small>Team administrator</small></div><button aria-label="Open profile menu"><ChevronDown/></button></div>
+    </aside>
+    {open && <button className="nav-scrim" onClick={()=>setOpen(false)} aria-label="Close navigation"/>}
+    <header className="topbar">
+      <button className="menu-button" onClick={()=>setOpen(true)} aria-label="Open navigation"><Menu/></button>
+      <button className="team-selector"><span className="team-mark">PLT</span><span>PLT Debate</span><ChevronDown/></button>
+      <label className="global-search"><Search/><input aria-label="Search cards, people, and documents" placeholder="Search cards, people, documents..."/><kbd>⌘ K</kbd></label>
+      <div className="top-actions"><span className="drive-pill"><i/> Drive synced</span><button aria-label="Notifications" className="top-icon"><Bell/><i/></button><span className="top-avatar">PQ</span></div>
     </header>
-  );
+  </>;
 }

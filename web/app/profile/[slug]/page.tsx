@@ -1,83 +1,15 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import { getProfileBySlug } from "@/lib/mockData";
+import { cards } from "@/lib/opsData";
 
-type Props = { params: Promise<{ slug: string }> };
-
-function formatDate(iso: string): string {
-  const d = new Date(iso);
-  const now = new Date();
-  const diffMs = now.getTime() - d.getTime();
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-  if (diffDays === 0) return "Today";
-  if (diffDays === 1) return "Yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return d.toLocaleDateString();
-}
-
-export default async function ProfilePage({ params }: Props) {
-  const { slug } = await params;
-  const profile = getProfileBySlug(slug);
-  if (!profile) notFound();
-
-  return (
-    <div className="min-h-screen bg-zinc-50 font-sans dark:bg-zinc-950">
-      <main className="mx-auto max-w-3xl px-4 py-12 sm:px-6 lg:px-8">
-        <nav className="mb-8">
-          <Link
-            href="/"
-            className="text-sm font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:decoration-zinc-600 dark:text-zinc-400 dark:decoration-zinc-600 dark:hover:decoration-zinc-300"
-          >
-            ← Back to leaderboard
-          </Link>
-        </nav>
-
-        <header className="mb-10">
-          <h1 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-zinc-50 sm:text-4xl">
-            {profile.name}
-          </h1>
-          <p className="mt-2 text-zinc-600 dark:text-zinc-400">
-            Rank #{profile.rank} · {profile.cardsCut.toLocaleString()} cards cut
-          </p>
-        </header>
-
-        <section aria-label="Recently cut cards" className="space-y-4">
-          <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-            Recently cut cards
-          </h2>
-          {profile.recentCards.length === 0 ? (
-            <p className="rounded-xl border border-zinc-200 bg-white px-6 py-8 text-center text-zinc-500 dark:border-zinc-800 dark:bg-zinc-900/50 dark:text-zinc-400">
-              No recent cards yet.
-            </p>
-          ) : (
-            <ul className="space-y-3">
-              {profile.recentCards.map((card) => (
-                <li
-                  key={card.id}
-                  className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm dark:border-zinc-800 dark:bg-zinc-900/50"
-                >
-                  <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
-                      {card.title}
-                    </span>
-                    <time
-                      dateTime={card.cutAt}
-                      className="text-sm text-zinc-500 dark:text-zinc-400"
-                    >
-                      {formatDate(card.cutAt)}
-                    </time>
-                  </div>
-                  {card.snippet && (
-                    <p className="mt-2 line-clamp-2 text-sm text-zinc-600 dark:text-zinc-400">
-                      {card.snippet}
-                    </p>
-                  )}
-                </li>
-              ))}
-            </ul>
-          )}
-        </section>
-      </main>
-    </div>
-  );
+export default async function ProfilePage({params}:{params:Promise<{slug:string}>}) {
+  const profile=getProfileBySlug((await params).slug); if(!profile) notFound();
+  return <main className="shell"><Link className="button" href="/">← Leaderboard</Link>
+    <section className="profile-hero" style={{marginTop:18}}><span className="avatar" style={{background:profile.accent,color:"#fff"}}>{profile.initials}</span><div className="profile-identity"><h1>{profile.name}</h1><p>{`// [${profile.slug.split("-")[0]}]`} · Debater · Last active {profile.lastAdded}</p></div><div className="profile-stats"><div><span>VERIFIED CARDS</span><strong>{profile.verified}</strong></div><div><span>THIS WEEK</span><strong className="positive">+{profile.periodAdded}</strong></div><div><span>DUPLICATE RATE</span><strong>{Math.round(profile.duplicates/profile.raw*100)}%</strong></div><div><span>TEAM RANK</span><strong>#{profile.rank}</strong></div></div></section>
+    <section className="panel" style={{marginBottom:20}}><div className="panel-head"><div><h2>Card production</h2><p>Verified cards over the last eight weeks</p></div></div><div className="bar-chart" aria-label="Text summary: card production rose from 11 to 42 cards over eight weeks">{[11,18,16,24,21,29,34,42].map((value,index)=><div className="trend-column" key={index}><i style={{height:`${value*2}px`}}/><small>W{index+1}</small></div>)}</div></section>
+    <div className="tabs"><button className="active">Counted cards</button><button>Duplicates</button><button>Flagged activity</button><button>Activity history</button></div>
+    <section className="panel">{cards.filter(card=>card.cutter===profile.name || profile.rank>3).slice(0,4).map(card=><article className="card-list-row" key={card.id}><div><h3>{card.title}</h3><p>{card.citation} · First observed {card.date}</p></div><div><small>SOURCE DOCUMENT</small><p>{card.document}</p></div><span className={`badge ${card.status==="Verified"?"verified":"near"}`}><i/>{card.status}</span><Link href="#" aria-label={`Open ${card.title} in Google Drive`}><ExternalLink/> Drive</Link></article>)}</section>
+  </main>;
 }

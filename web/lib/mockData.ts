@@ -1,90 +1,57 @@
 import { slugify } from "./slugs";
 
-export type Season = {
-  slug: string;
-  name: string;
-};
+export type ReviewStatus = "Clear" | "Monitor" | "Review";
 
 export type LeaderboardEntry = {
   rank: number;
   name: string;
   slug: string;
-  cardsCut: number;
+  initials: string;
+  verified: number;
+  raw: number;
+  duplicates: number;
+  periodAdded: number;
+  lastAdded: string;
+  reviewStatus: ReviewStatus;
+  accent: string;
 };
 
 export type RecentCard = {
   id: string;
   title: string;
-  cutAt: string; // ISO date
-  snippet?: string;
+  cutAt: string;
+  snippet: string;
+  source: string;
+  status: "Counted" | "Duplicate" | "Flagged";
+  reason: string;
 };
 
-export type Profile = {
-  name: string;
-  slug: string;
-  cardsCut: number;
-  rank: number;
-  recentCards: RecentCard[];
-};
+export type Profile = LeaderboardEntry & { recentCards: RecentCard[] };
 
-// Placeholder data – replace with data from your Google Drive scanner
-const RAW_LEADERBOARD: Omit<LeaderboardEntry, "slug">[] = [
-  { rank: 1, name: "ilovebeabadoobee", cardsCut: 1495 },
-  { rank: 2, name: "ezpeasy", cardsCut: 38 },
-  { rank: 3, name: "riyal or fake", cardsCut: 31 },
-  { rank: 4, name: "weij", cardsCut: 24 },
-  { rank: 5, name: "adi", cardsCut: 19 },
+const RAW_LEADERBOARD: Omit<LeaderboardEntry, "rank" | "slug">[] = [
+  { name: "Pingkang Qian", initials: "PQ", verified: 184, raw: 201, duplicates: 17, periodAdded: 42, lastAdded: "12 min ago", reviewStatus: "Clear", accent: "#ef4444" },
+  { name: "Tony Dong", initials: "TD", verified: 161, raw: 176, duplicates: 15, periodAdded: 36, lastAdded: "1 hr ago", reviewStatus: "Clear", accent: "#2563eb" },
+  { name: "Emily Zhang", initials: "EZ", verified: 137, raw: 159, duplicates: 22, periodAdded: 31, lastAdded: "3 hrs ago", reviewStatus: "Monitor", accent: "#d97706" },
+  { name: "Weij Chen", initials: "WC", verified: 119, raw: 128, duplicates: 9, periodAdded: 27, lastAdded: "Yesterday", reviewStatus: "Clear", accent: "#059669" },
+  { name: "Adi Patel", initials: "AP", verified: 93, raw: 112, duplicates: 19, periodAdded: 18, lastAdded: "Yesterday", reviewStatus: "Review", accent: "#7c3aed" },
+  { name: "Maya Lin", initials: "ML", verified: 76, raw: 82, duplicates: 6, periodAdded: 14, lastAdded: "2 days ago", reviewStatus: "Clear", accent: "#db2777" },
 ];
 
-export const MOCK_LEADERBOARD: LeaderboardEntry[] = RAW_LEADERBOARD.map(
-  (e) => ({ ...e, slug: slugify(e.name) })
-);
+export const LEADERBOARD: LeaderboardEntry[] = RAW_LEADERBOARD.map((entry, index) => ({
+  ...entry,
+  rank: index + 1,
+  slug: slugify(entry.name),
+}));
 
-// Seasons – replace with real data (e.g. from scanner or API)
-export const MOCK_SEASONS: Season[] = [
-  { slug: "2025-spring", name: "2025 Spring" },
-  { slug: "2024-fall", name: "2024 Fall" },
-  { slug: "2024-spring", name: "2024 Spring" },
-];
-
-export function getSeasonBySlug(slug: string): Season | null {
-  return MOCK_SEASONS.find((s) => s.slug === slug) ?? null;
-}
-
-export function getLeaderboardBySeason(seasonSlug: string): LeaderboardEntry[] {
-  // For now all seasons share the same mock leaderboard; later key by seasonSlug.
-  return MOCK_LEADERBOARD;
-}
-
-// Mock recently cut cards per profile (keyed by slug)
-const MOCK_RECENT_CARDS: Record<string, RecentCard[]> = {
-  ilovebeabadoobee: [
-    { id: "1", title: "Economic collapse – inflation", cutAt: "2025-02-10T14:00:00Z", snippet: "Inflation undermines stability..." },
-    { id: "2", title: "Healthcare access – solvency", cutAt: "2025-02-09T11:30:00Z", snippet: "Medicare solvency is key..." },
-    { id: "3", title: "Climate – renewable jobs", cutAt: "2025-02-08T09:15:00Z", snippet: "Renewable sector job growth..." },
+const CARDS: Record<string, RecentCard[]> = {
+  "pingkang-qian": [
+    { id: "c-1042", title: "Grid modernization prevents capacity shortfalls", cutAt: "2026-07-30T17:48:00Z", snippet: "Regional transmission investment is the binding constraint on clean generation deployment.", source: "Energy Aff — Grid", status: "Counted", reason: "Unique evidence; strict tag matched; 187 words." },
+    { id: "c-1038", title: "Industrial policy strengthens supply chain resilience", cutAt: "2026-07-30T16:21:00Z", snippet: "Targeted public investment reduces exposure to concentrated critical mineral supply.", source: "Econ Core — Resilience", status: "Counted", reason: "No exact or near-duplicate found." },
+    { id: "c-1011", title: "Permitting reform accelerates transmission", cutAt: "2026-07-29T20:02:00Z", snippet: "Interregional projects face approval delays across multiple jurisdictions.", source: "Energy Aff — Grid", status: "Duplicate", reason: "96% similar to card c-884; first observed copy retained." },
   ],
-  ezpeasy: [
-    { id: "4", title: "Trade – tariffs impact", cutAt: "2025-02-10T10:00:00Z" },
-    { id: "5", title: "Immigration – border security", cutAt: "2025-02-07T16:00:00Z" },
-  ],
-  "riyal-or-fake": [
-    { id: "6", title: "Nuclear proliferation", cutAt: "2025-02-09T12:00:00Z", snippet: "Proliferation risks increase..." },
-  ],
-  weij: [
-    { id: "7", title: "Tech regulation", cutAt: "2025-02-08T14:00:00Z" },
-  ],
-  adi: [],
 };
 
 export function getProfileBySlug(slug: string): Profile | null {
-  const entry = MOCK_LEADERBOARD.find((e) => e.slug === slug);
-  if (!entry) return null;
-  const recentCards = MOCK_RECENT_CARDS[slug] ?? [];
-  return {
-    name: entry.name,
-    slug: entry.slug,
-    cardsCut: entry.cardsCut,
-    rank: entry.rank,
-    recentCards,
-  };
+  const entry = LEADERBOARD.find((candidate) => candidate.slug === slug);
+  return entry ? { ...entry, recentCards: CARDS[slug] ?? [] } : null;
 }
